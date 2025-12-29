@@ -1,4 +1,4 @@
-name: S3_Mini_Build_V5
+name: S3_Mini_Build_V6
 
 on:
   workflow_dispatch:
@@ -12,20 +12,16 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install Tools and Toolchain
+      - name: Install Base Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip python3-setuptools python3-wheel
-          # ArduPilot'un ESP32 araçlarını kuran özel komut
-          ./Tools/environment_install/install-prereqs-ubuntu.sh -y
-          # Bıçakların (Toolchain) yerini robotun beynine (PATH) kazı
-          echo "$HOME/opt/xtensa-esp32s3-elf/bin" >> $GITHUB_PATH
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          pip3 install empy==3.3.4 pexpect
 
       - name: Configure and Build
         run: |
-          # Burada artık PATH otomatik olarak tanınacak
-          ./waf configure --board esp32s3devkit
+          # Bu komut, toolchain eksikse robotun kendi kendine indirmesini sağlar
+          ./waf configure --board esp32s3devkit --download-toolchain
           ./waf plane
 
       - name: Upload Artifact
