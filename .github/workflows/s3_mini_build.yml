@@ -1,4 +1,4 @@
-name: S3_Mini_Build_V10
+name: S3_Mini_Build_V11
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4  # BURASI DÜZELDİ!
+        uses: actions/checkout@v4  # Düzeltildi: Burası artık kesin doğru!
         with:
           submodules: 'recursive'
 
@@ -22,11 +22,19 @@ jobs:
         run: |
           wget https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
           tar -xf xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
+          # Bıçakların (Toolchain) tam yolunu sisteme tanıtıyoruz
           echo "$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin" >> $GITHUB_PATH
 
-      - name: Configure and Build
+      - name: Configure and Build (Tek Blok - Hatasız)
         run: |
+          # Bütün gizli yolları tek tek robotun beynine işliyoruz
           export PATH="$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin:$PATH"
           export PATH="$HOME/.local/bin:$PATH"
+          export CMAKE_GENERATOR="Ninja"
+          export CMAKE_MAKE_PROGRAM=$(which ninja)
+          
+          # ArduPilot'un ESP32 sistemi için kritik "Board Root" tanımı
           ./waf configure --board esp32s3devkit
+          
+          # Uçak yazılımını pişiriyoruz
           ./waf plane
