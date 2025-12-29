@@ -1,14 +1,18 @@
-name: S3_Mini_Build_V11
+name: S3_Mini_Build_V12
 
 on:
   workflow_dispatch:
+
+env: # Bütün yolları global olarak buraya mühürledik
+  TOOLCHAIN_PATH: ${{ github.workspace }}/xtensa-esp32s3-elf/bin
+  NINJA_PATH: /usr/bin/ninja
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4  # Düzeltildi: Burası artık kesin doğru!
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
@@ -22,19 +26,16 @@ jobs:
         run: |
           wget https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
           tar -xf xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
-          # Bıçakların (Toolchain) tam yolunu sisteme tanıtıyoruz
-          echo "$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin" >> $GITHUB_PATH
+          # Yolu hem PATH'e hem de GITHUB_PATH'e ekliyoruz
+          echo "${{ env.TOOLCHAIN_PATH }}" >> $GITHUB_PATH
 
-      - name: Configure and Build (Tek Blok - Hatasız)
+      - name: Configure and Build (Tek Hamle)
         run: |
-          # Bütün gizli yolları tek tek robotun beynine işliyoruz
-          export PATH="$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin:$PATH"
-          export PATH="$HOME/.local/bin:$PATH"
+          # CMake'e Ninja'nın yerini ve Toolchain'i zorla gösteriyoruz
+          export PATH="${{ env.TOOLCHAIN_PATH }}:$PATH"
           export CMAKE_GENERATOR="Ninja"
-          export CMAKE_MAKE_PROGRAM=$(which ninja)
+          export CMAKE_MAKE_PROGRAM="${{ env.NINJA_PATH }}"
           
-          # ArduPilot'un ESP32 sistemi için kritik "Board Root" tanımı
+          # Ayarları yap ve pişirmeye başla
           ./waf configure --board esp32s3devkit
-          
-          # Uçak yazılımını pişiriyoruz
           ./waf plane
