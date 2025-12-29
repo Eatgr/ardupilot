@@ -1,4 +1,4 @@
-name: S3_Mini_Build_V7
+name: S3_Mini_Build_V8
 
 on:
   workflow_dispatch:
@@ -12,26 +12,26 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install Prerequisites
+      - name: Install System Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip python3-setuptools python3-wheel libserialport-dev
+          # Ninja ve CMake'i zorla kuruyoruz, bunlar olmadan ESP32 derlenmez
+          sudo apt-get install -y ninja-build cmake python3-pip python3-setuptools python3-wheel libserialport-dev
           pip3 install empy==3.3.4 pexpect future
 
-      - name: Download ESP32-S3 Toolchain
+      - name: Download and Setup ESP32-S3 Toolchain
         run: |
-          # S3 için gereken özel bıçak takımını direkt indiriyoruz
+          # S3 için derleyiciyi indir
           wget https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
           tar -xf xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
-          # Çekmecenin yerini robotun hafızasına kazı
+          # Derleyici yolunu sisteme kalıcı olarak ekle
           echo "$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin" >> $GITHUB_PATH
 
-      - name: Configure
+      - name: Configure and Build
         run: |
+          # Tek bir blokta çalıştırarak ortam değişkenlerinin kaybolmasını önlüyoruz
+          export PATH="$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin:$PATH"
           ./waf configure --board esp32s3devkit
-
-      - name: Build Plane
-        run: |
           ./waf plane
 
       - name: Upload Artifact
