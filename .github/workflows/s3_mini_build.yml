@@ -1,34 +1,36 @@
-name: S3_Mini_Build
+name: S3_Mini_Build_V3
 
 on:
-  workflow_dispatch: # Bu satır "Run workflow" butonunu çıkartır
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
-      - name: Install Prerequisites
+      - name: Install Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -u python3-pip python3-setuptools python3-wheel
-          ./Tools/environment_install/install-prereqs-ubuntu.sh -y
+          sudo apt-get install -y python3-pip python3-setuptools python3-wheel
+          pip3 install empy==3.3.4 pexpect
 
-      - name: Build Firmware
+      - name: Configure
         run: |
-          export PATH=$PATH:$HOME/.local/bin
-          ./waf configure --board esp32s3-plane
+          ./waf configure --board esp32s3devkit
+
+      - name: Build Plane
+        run: |
           ./waf plane
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ESP32-S3-Mini-Firmware
+          name: S3-Mini-ArduPlane
           path: |
-            build/esp32s3-plane/bin/ardplane.bin
-            build/esp32s3-plane/bin/bootloader.bin
-            build/esp32s3-plane/bin/partition-table.bin
+            build/esp32s3devkit/bin/ardplane.bin
+            build/esp32s3devkit/bin/bootloader.bin
+            build/esp32s3devkit/bin/partition-table.bin
