@@ -1,35 +1,41 @@
-name: S3_Mini_Build_V3
+name: S3_Mini_Build_V4
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
-      - name: Install Tools
+      - name: Install ESP32 Toolchain
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip python3-setuptools python3-wheel
+          # ArduPilot'un otomatik kurulum aracını ESP32 için çalıştırıyoruz
+          ./Tools/environment_install/install-prereqs-ubuntu.sh -y
+          # ESP32 için gereken özel kütüphaneleri ekle
           pip3 install empy==3.3.4 pexpect
 
       - name: Configure
         run: |
+          # Toolchain yolunu sisteme tanıtıyoruz
+          export PATH=$PATH:$HOME/.local/bin
           ./waf configure --board esp32s3devkit
 
       - name: Build Plane
         run: |
+          export PATH=$PATH:$HOME/.local/bin
           ./waf plane
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: S3-Mini-ArduPlane
+          name: S3-Mini-ArduPlane-Firmware
           path: |
             build/esp32s3devkit/bin/ardplane.bin
             build/esp32s3devkit/bin/bootloader.bin
