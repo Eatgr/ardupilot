@@ -1,41 +1,33 @@
-name: S3_Mini_Build_V12
+name: S3_Mini_Build_DOCKER
 
 on:
   workflow_dispatch:
 
-env: # Bütün yolları global olarak buraya mühürledik
-  TOOLCHAIN_PATH: ${{ github.workspace }}/xtensa-esp32s3-elf/bin
-  NINJA_PATH: /usr/bin/ninja
-
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    # Bu satır sihirli değnektir; her şeyi hazır kurulu olan odayı getirir
+    container: ardupilot/ardupilot-dev-esp32:latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
-      - name: Install System Tools
+      - name: Build Firmware
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake python3-pip python3-setuptools libserialport-dev
-          pip3 install empy==3.3.4 pexpect future ninja cmake
-
-      - name: Download ESP32-S3 Toolchain
-        run: |
-          wget https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
-          tar -xf xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
-          # Yolu hem PATH'e hem de GITHUB_PATH'e ekliyoruz
-          echo "${{ env.TOOLCHAIN_PATH }}" >> $GITHUB_PATH
-
-      - name: Configure and Build (Tek Hamle)
-        run: |
-          # CMake'e Ninja'nın yerini ve Toolchain'i zorla gösteriyoruz
-          export PATH="${{ env.TOOLCHAIN_PATH }}:$PATH"
-          export CMAKE_GENERATOR="Ninja"
-          export CMAKE_MAKE_PROGRAM="${{ env.NINJA_PATH }}"
-          
-          # Ayarları yap ve pişirmeye başla
+          # Bu ortamda her şey zaten yüklü, sadece derliyoruz
+          git config --global --add safe.directory /__w/ardupilot/ardupilot
           ./waf configure --board esp32s3devkit
           ./waf plane
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: S3-Mini-ArduPlane-Firmware
+          path: |
+            build/esp32s3devkit/bin/ardplane.bin
+            build/esp32s3devkit/bin/bootloader.bin
+            build/esp32s3devkit/bin/partition-table.bin
