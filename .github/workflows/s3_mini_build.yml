@@ -1,4 +1,4 @@
-name: S3_Mini_Build_V9
+name: S3_Mini_Build_V10
 
 on:
   workflow_dispatch:
@@ -8,18 +8,17 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: uses/checkout@v4
+        uses: actions/checkout@v4  # BURASI DÜZELDİ!
         with:
           submodules: 'recursive'
 
-      - name: Install Critical Tools
+      - name: Install System Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build cmake python3-pip python3-setuptools libserialport-dev
-          # Ninja ve CMake'i Python yoluna da ekleyerek garantiliyoruz
           pip3 install empy==3.3.4 pexpect future ninja cmake
 
-      - name: Download Toolchain
+      - name: Download ESP32-S3 Toolchain
         run: |
           wget https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
           tar -xf xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
@@ -27,12 +26,7 @@ jobs:
 
       - name: Configure and Build
         run: |
-          # Ortam değişkenlerini bu adımda da zorla tanıtıyoruz
           export PATH="$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin:$PATH"
           export PATH="$HOME/.local/bin:$PATH"
-          
-          # Önce tertemiz bir ayar yapıyoruz
           ./waf configure --board esp32s3devkit
-          
-          # Ve asıl uçak yazılımını pişirmeye başlıyoruz
           ./waf plane
