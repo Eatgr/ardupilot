@@ -1,4 +1,4 @@
-name: S3_Mini_Build_V8
+name: S3_Mini_Build_V9
 
 on:
   workflow_dispatch:
@@ -8,37 +8,31 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: uses/checkout@v4
         with:
           submodules: 'recursive'
 
-      - name: Install System Tools
+      - name: Install Critical Tools
         run: |
           sudo apt-get update
-          # Ninja ve CMake'i zorla kuruyoruz, bunlar olmadan ESP32 derlenmez
-          sudo apt-get install -y ninja-build cmake python3-pip python3-setuptools python3-wheel libserialport-dev
-          pip3 install empy==3.3.4 pexpect future
+          sudo apt-get install -y ninja-build cmake python3-pip python3-setuptools libserialport-dev
+          # Ninja ve CMake'i Python yoluna da ekleyerek garantiliyoruz
+          pip3 install empy==3.3.4 pexpect future ninja cmake
 
-      - name: Download and Setup ESP32-S3 Toolchain
+      - name: Download Toolchain
         run: |
-          # S3 için derleyiciyi indir
           wget https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
           tar -xf xtensa-esp32s3-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz
-          # Derleyici yolunu sisteme kalıcı olarak ekle
           echo "$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin" >> $GITHUB_PATH
 
       - name: Configure and Build
         run: |
-          # Tek bir blokta çalıştırarak ortam değişkenlerinin kaybolmasını önlüyoruz
+          # Ortam değişkenlerini bu adımda da zorla tanıtıyoruz
           export PATH="$GITHUB_WORKSPACE/xtensa-esp32s3-elf/bin:$PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          
+          # Önce tertemiz bir ayar yapıyoruz
           ./waf configure --board esp32s3devkit
+          
+          # Ve asıl uçak yazılımını pişirmeye başlıyoruz
           ./waf plane
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: S3-Mini-ArduPlane-Firmware
-          path: |
-            build/esp32s3devkit/bin/ardplane.bin
-            build/esp32s3devkit/bin/bootloader.bin
-            build/esp32s3devkit/bin/partition-table.bin
